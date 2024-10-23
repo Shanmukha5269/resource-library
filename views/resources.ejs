@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  body{
+    background-color: blanchedalmond;
+  }
+</style>
+<body>
+  <h1>Resource Library</h1>
+  <ul>
+    <% resources.forEach(resource => { %>
+      <li><a href="<%= resource.link %>"><%= resource.title %></a> - <%= resource.type %></li>
+    <% }); %>
+  </ul>
+  <form action="/resources" method="POST">
+    <input type="text" name="title" placeholder="Resource Title" required>
+    <input type="text" name="type" placeholder="Type (e.g. Article, Book)" required>
+    <input type="text" name="description" placeholder="Description">
+    <input type="text" name="link" placeholder="Resource Link">
+    <button type="submit">Add Resource</button>
+  </form>
+  
+</body>
+</html>
+
