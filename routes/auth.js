@@ -1,17 +1,15 @@
 const express = require('express');
 const passport = require('passport');
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
+const LocalStrategy = require('passport-local').Strategy;
 
 const router = express.Router();
 
-const bcrypt = require('bcrypt'); 
-
-const LocalStrategy = require('passport-local').Strategy;
-
+// Passport local strategy for authentication
 passport.use(new LocalStrategy(
   async function(username, password, done) {
     try {
-      // Find the user by username
       const user = await User.findOne({ username });
 
       // If user not found
@@ -21,7 +19,6 @@ passport.use(new LocalStrategy(
 
       // Check if the password is correct
       const isMatch = await bcrypt.compare(password, user.password);
-      
       if (!isMatch) {
         return done(null, false, { message: 'Incorrect password.' });
       }
@@ -34,8 +31,7 @@ passport.use(new LocalStrategy(
   }
 ));
 
-
-
+// Serialize and deserialize user
 passport.serializeUser(function(user, done) {
   done(null, user.id); // Save the user's ID to the session
 });
@@ -43,31 +39,14 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(async function(id, done) {
   try {
     const user = await User.findById(id); // Find the user by ID
+    if (!user) {
+      return done(new Error('User not found'));
+    }
     done(null, user); // Attach the user to the request
   } catch (err) {
     done(err);
   }
 });
-
-// error handling
-
-passport.serializeUser(function(user, done) {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async function(id, done) {
-  try {
-    const user = await User.findById(id);
-    if (!user) {
-      return done(new Error('User not found'));
-    }
-    done(null, user);
-  } catch (err) {
-    done(err);
-  }
-});
-
-
 
 // Registration
 router.get('/register', (req, res) => {
@@ -75,9 +54,23 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const user = new User(req.body);
-  await user.save();
-  res.redirect('/auth/login');
+  try {
+    const { username, password } = req.body;
+
+    // Hash the password before saving the user
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
+
+    const user = new User({
+      username,
+      password: hashedPassword
+    });
+
+    await user.save();
+    res.redirect('/auth/login');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error registering user');
+  }
 });
 
 // Login
